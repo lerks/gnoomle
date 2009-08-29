@@ -3,7 +3,7 @@ AC_INIT([Gnoomle], [0.1], [lerks@users.sourceforge.net], [gnoomle])
 AM_INIT_AUTOMAKE(AC_PACKAGE_NAME, AC_PACKAGE_VERSION)
 
 AC_CONFIG_MACRO_DIR([m4])
-AC_CONFIG_SRCDIR([src/interface.h])
+AC_CONFIG_SRCDIR([src/main.cc])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([
  Makefile
@@ -18,8 +18,9 @@ AC_PROG_CC
 # Checks for libraries.
 AM_PROG_LIBTOOL
 PKG_CHECK_MODULES(GNOOMLE, [
- gtkmm-2.4 >= 2.8
+ glibmm-2.4 >= 2.8
  libxml++-2.6
+ libsoup-2.4 >= 2.26
 ])
 
 # Checks for header files.

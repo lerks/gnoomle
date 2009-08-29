@@ -17,10 +17,17 @@
  */
 
 #include "connection.h"
+#include "config.h"
 
-int main (int argc, char** argv)
+Connection::Connection()
 {
-	Connection first;
+	authenticated = false;
+	captcha_needed = false;
 	
-	return 0;
+	source = PACKAGE"-"VERSION;
+	
+	session = soup_session_sync_new ();
 }
+
+
+request (url, content, callback);
