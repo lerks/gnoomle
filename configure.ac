@@ -19,7 +19,7 @@ AC_PROG_CC
 AM_PROG_LIBTOOL
 PKG_CHECK_MODULES(GNOOMLE, [
  glibmm-2.4 >= 2.8
- libxml++-2.6
+ libxml++-2.6 >= 2.10.0
  libsoup-2.4 >= 2.26
 ])
 

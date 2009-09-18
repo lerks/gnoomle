@@ -17,10 +17,28 @@
  */
 
 #include "connection.h"
+#include <iostream>
 
 int main (int argc, char** argv)
 {
-	Connection first;
+	std::cout << "1...\n";
 	
+	Glib::init ();
+	
+	std::cout << "2...\n";
+	
+	Glib::thread_init ();
+	
+	std::cout << "3...\n";
+	
+	Connection first;
+
+	std::cout << "4...\n";
+	
+	Glib::RefPtr<Request> richiesta = Request::create ("GET", "hello!");
+	
+	std::cout << "5...\n";
+	
+	std::cout << richiesta->url() << "\n";
 	return 0;
 }
