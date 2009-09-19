@@ -43,56 +43,8 @@
 #include <libxml++/libxml++.h>
 #include <libsoup/soup.h>
 
+class Request;
 
-class Request : public Glib::Object
-{
-public:
-	static Glib::RefPtr<Request> create (Glib::ustring http_method, Glib::ustring url);
-	static Glib::RefPtr<Request> create (Glib::ustring http_method, Glib::ustring url, Glib::ustring content_type, Glib::ustring request_body);
-	
-	/// Connnect a handler to signal_finished
-	/** The handler passed as argument will be connected to the signal_finished,
-	    that will be emitted when the request has completed and the response is ready to be read.
-	    This method returns a sigc::connect object which can be used to disconnect the handler from the signal.
-	*/
-	sigc::connection signal_finished_connect (sigc::slot<void> handler);
-	
-	Glib::PropertyProxy<Glib::ustring> http_method ();
-	Glib::PropertyProxy<Glib::ustring> url ();
-	
-	Glib::PropertyProxy<Glib::ustring> request_content_type ();
-	Glib::PropertyProxy<Glib::ustring> request_headers ();
-	Glib::PropertyProxy<Glib::ustring> request_body ();
-	
-	Glib::PropertyProxy<Glib::ustring> response_status_code ();
-	Glib::PropertyProxy<Glib::ustring> response_reason_phrase ();
-	Glib::PropertyProxy<Glib::ustring> response_headers ();
-	Glib::PropertyProxy<Glib::ustring> response_body ();
-	
-	
-private:
-	/// The signal that is emitted when the response is ready to be read
-	/** Every sigc::slot connected to this signal will be called when the request has completed and the response is ready to be read.
-	    Handlers, though, cannot be connected directly to this signal but has to be connected using the signal_finished_connect() method.
-	*/
-	sigc::signal<void> signal_finished;
-	
-	Glib::Property<Glib::ustring> _http_method;
-	Glib::Property<Glib::ustring> _url;
-	
-	Glib::Property<Glib::ustring> _request_content_type;
-	Glib::Property<Glib::ustring> _request_headers;
-	Glib::Property<Glib::ustring> _request_body;
-	
-	Glib::Property<Glib::ustring> _response_status_code;
-	Glib::Property<Glib::ustring> _response_reason_phrase;
-	Glib::Property<Glib::ustring> _response_headers;
-	Glib::Property<Glib::ustring> _response_body;
-	
-	/// The default constructor
-	// FIXME: maybe it should decalred protected?
-	Request ();
-};
 
 
 /// A class used to connect to Google, wich provides some helper methods for HTTP requests
@@ -142,8 +94,7 @@ public:
 	    The callback data of this method is a pointer Request object. To have other data types use other methods.
 	    The callback has to be declared void.
 	*/
-	void request ();
-	void request_callback (SoupSession *session, SoupMessage *message, void* request);
+	void request (Glib::RefPtr<Request> request);
 
 private:
 	SoupSession *session;
@@ -157,5 +108,88 @@ private:
 	Glib::ustring service;
 	Glib::ustring source;
 	Glib::ustring auth_token;
+	
+	void request_thread (Glib::RefPtr<Request> request);
 };
+
+
+
+/// A representation of a request
+class Request : public Glib::Object
+{
+public:
+	/// Create an instance of this class
+	/** This method return a Glib::RefPtr pointing to an instance of this class.
+	    You have to pass the HTTP method and the destination URL.
+	    If you use this method you probably want to use the "GET" HTTP method.
+	    If you want to use "POST" you have to use the other create() method or you have to specify the content of the request using the appropriate methods.
+	*/
+	static Glib::RefPtr<Request> create (Glib::ustring http_method, Glib::ustring url);
+	/// Create an instance of this class
+	/** This method return a Glib::RefPtr pointing to an instance of this class.
+	    You have to pass the HTTP method, the destination URL and the content type and body of the request.
+	    If you use this method you probably want to use the "POST" HTTP method.
+	    If you want to use "GET" you should use the other create() method since it doesn't requeire you to set any information about the request.
+	*/
+	static Glib::RefPtr<Request> create (Glib::ustring http_method, Glib::ustring url, Glib::ustring content_type, Glib::ustring request_body);
+	
+	/// Obtain the signal to which you can connect you handler
+	/** The sigc::signal returned can be used to connect a handler using the connect() method.
+	    The signal will be emitted and all handlers will be called when the request has completed and the response is ready to be read.
+	    FIXME To make the request begin you have to call the Connection::request() method passing an instance of this class as an argument.
+	    The sigc::connection object returned form the connect() method can be used to disconnect the handler.
+	*/
+	sigc::signal<void> signal_complete ();
+	
+	/// Get and set the HTTP method used for the request
+	/** It can be either GET or POST
+	*/
+	Glib::PropertyProxy<Glib::ustring> http_method ();
+	/// Get and set the URL of the request
+	Glib::PropertyProxy<Glib::ustring> url ();
+	
+	/// Get and set the content type of the request, if any
+	Glib::PropertyProxy<Glib::ustring> request_content_type ();
+	/// Get and set the headers of the request, if any
+	Glib::PropertyProxy<Glib::ustring> request_headers ();
+	/// Get and set the body of the request message, if any
+	Glib::PropertyProxy<Glib::ustring> request_body ();
+	
+	/// Get the status code of the response, if the request has completed
+	Glib::PropertyProxy<Glib::ustring> response_status_code ();
+	/// Get the reason phrase of the response, if the request has completed
+	Glib::PropertyProxy<Glib::ustring> response_reason_phrase ();
+	/// Get the headers of the response, if the request has completed
+	Glib::PropertyProxy<Glib::ustring> response_headers ();
+	/// Get the body of the response message, if the request has completed
+	Glib::PropertyProxy<Glib::ustring> response_body ();
+	
+	friend class Connection;
+	
+	
+private:
+	/// The signal that is emitted when the response is ready to be read
+	/** Every sigc::slot connected to this signal will be called when the request has completed and the response is ready to be read.
+	    Handlers, though, cannot be connected directly to this signal but has to be connected using the signal_finished_connect() method.
+	*/
+	sigc::signal<void> _signal_complete;
+	
+	Glib::Property<Glib::ustring> _http_method;
+	Glib::Property<Glib::ustring> _url;
+	
+	Glib::Property<Glib::ustring> _request_content_type;
+	Glib::Property<Glib::ustring> _request_headers;
+	Glib::Property<Glib::ustring> _request_body;
+	
+	Glib::Property<Glib::ustring> _response_status_code;
+	Glib::Property<Glib::ustring> _response_reason_phrase;
+	Glib::Property<Glib::ustring> _response_headers;
+	Glib::Property<Glib::ustring> _response_body;
+	
+	/// The default constructor
+	// FIXME: maybe it should decalred protected?
+	Request ();
+};
+
+
 

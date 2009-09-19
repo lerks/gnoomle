@@ -105,6 +105,11 @@ Glib::PropertyProxy<Glib::ustring> Request::response_body ()
 	return Glib::PropertyProxy<Glib::ustring> (this, "response_body");
 }
 
+sigc::signal<void> Request::signal_complete ()
+{
+	return _signal_complete;
+}
+
 
 
 
@@ -120,31 +125,28 @@ Connection::Connection ()
 	session = soup_session_sync_new ();
 }
 
-/*
-void Connection::request (Glib::ustring http_method, Glib::ustring url, Glib::ustring content_type, Glib::ustring request_body, sigc::slot<void, Request*> callback)
+
+void Connection::request (Glib::RefPtr<Request> request)
 {
-	Request* request;
-	request = new Request ();
-	
-	request->signal_finished.connect (callback);
-	
-	SoupMessage* message = soup_message_new (http_method.c_str (), url.c_str ());
+	// TODO Check if data is correct
+
+}
+
+void Connection::request_thread (Glib::RefPtr<Request> request)
+{
+	SoupMessage* message = soup_message_new (request->_http_method.get_value().c_str (), request->_url.get_value().c_str ());
 	
 	if (authenticated)
 		soup_message_headers_append (message->request_headers, "Authorization",
 		                             Glib::ustring::compose ("GoogleLogin auth=%1", auth_token).c_str ());
 	
-	if (content_type.empty () || request_body.empty ())
-		// Worry about the SoupMemoryuse when optimiziation with parameters is done
-		soup_message_set_request (message, content_type.c_str (), SOUP_MEMORY_STATIC, request_body.c_str (), request_body.bytes ());
+	if (! (request->_request_content_type.get_value().empty () || request->_request_body.get_value().empty ()))
+		// FIXME Worry about the SoupMemoryuse when optimiziation with parameters is done
+		soup_message_set_request (message, request->_request_content_type.get_value().c_str (), SOUP_MEMORY_STATIC, request->_request_body.get_value().c_str (), request->_request_body.get_value().bytes ());
 	
-	soup_session_queue_message (session, message, request_callback, (void*)request);
+	unsigned int status;
+	status = soup_session_send_message (session, message);
+	
+	request->_signal_complete.emit ();
 }
 
-void Connection::request_callback (SoupSession *session, SoupMessage *message, void* request)
-{
-	// Do some other nice work
-	Request* richiesta = (Request*)request;
-	richiesta->signal_finished.emit (richiesta);
-}
-*/
